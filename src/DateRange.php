@@ -124,7 +124,7 @@ class DateRange
      *
      * 14th May - 5th June 2018
      *
-     * If the year and the month are the same, then neither yar or month are shown for the start date:
+     * If the year and the month are the same, then neither year or month are shown for the start date:
      *
      * 14th - 15th May 2018.
      *
