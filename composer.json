@@ -1,0 +1,54 @@
+{
+  "name": "gamajo/daterange",
+  "description": "Display a range of dates, with consolidated time parts.",
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "license": "MIT",
+  "homepage": "https://github.com/GaryJones/date-range",
+  "authors": [
+    {
+      "name": "Gary Jones",
+      "homepage": "https://gamajo.com",
+      "role": "Developer"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/GaryJones/daterange/issues",
+    "source": "https://github.com/GaryJones/daterange"
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "require": {
+    "php": "^7.1"
+  },
+  "require-dev": {
+    "brain/monkey": "^2.2",
+    "dealerdirect/phpcodesniffer-composer-installer": "^0.4.4",
+    "infection/infection": "^0.8",
+    "mockery/mockery": "^1.1",
+    "object-calisthenics/phpcs-calisthenics-rules": "^3",
+    "phpunit/phpunit": "^7",
+    "roave/security-advisories": "dev-master",
+    "squizlabs/php_codesniffer": "^3.2",
+    "sirbrillig/phpcs-variable-analysis": "^2.0",
+    "wimg/php-compatibility": "^8.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "Gamajo\\DateRange\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Gamajo\\DateRange\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "./vendor/bin/phpunit",
+    "phpcs": "./vendor/bin/phpcs",
+    "install-codestandards": [
+      "Dealerdirect\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\Plugin::run"
+    ]
+  }
+}
