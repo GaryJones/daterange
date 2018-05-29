@@ -17,7 +17,6 @@ namespace Gamajo\DateRange;
 
 use DateTimeInterface;
 
-// @codingStandardsChangeSetting ObjectCalisthenics.Metrics.MethodPerClassLimit maxCount 11
 // @codingStandardsChangeSetting ObjectCalisthenics.Files.ClassTraitAndInterfaceLength maxLength 250
 
 /**
@@ -35,11 +34,25 @@ class DateRange
     protected $startDate;
 
     /**
-     * End Date
+     * End date.
      *
      * @var DateTimeInterface
      */
     protected $endDate;
+
+    /**
+     * Start date format.
+     *
+     * @var string
+     */
+    protected $startDateFormat;
+
+    /**
+     * End Date format.
+     *
+     * @var string
+     */
+    protected $endDateFormat;
 
     /**
      * Separator between the consolidated start and end dates.
@@ -58,23 +71,6 @@ class DateRange
      * @var string
      */
     protected $removableDelimiters = '/-.';
-
-    /**
-     * Time part character sets.
-     *
-     * Treated like aliases i.e. a month part might be required as March, Mar, 3 or 03,
-     * but they are all treated as a month.
-     *
-     * As per https://secure.php.net/manual/en/function.date.php.
-     */
-    protected const CHAR_SETS = [
-        ['o', 'Y', 'y'], // Year
-        ['F', 'm', 'M', 'n'], // Month
-        ['d', 'j'], // Date
-        ['g', 'G', 'h', 'H'], // Hour
-        ['i'], // Minute
-        ['s'], // Second
-    ];
 
     /**
      * DateRange constructor.
@@ -130,10 +126,11 @@ class DateRange
      *
      * This continues for date (day of the month), hours, minutes and seconds.
      *
-     * The output looks best when the format has time parts in increasing order of size.
-     * It will technically work in other orders though:
+     * It even works when not in size order:
      *
-     * 14:00  23rd – 2018 14:00 Jun 24th 2018
+     * Jun 23rd – 28th 2018
+     *
+     * Hours, minutes and second time parts NOT supported.
      *
      * @since 1.0.0
      *
@@ -148,108 +145,46 @@ class DateRange
             return $this->endDate->format($endDateFormat);
         }
 
-        $startDateFormat = $this->getStartDateFormat($endDateFormat);
+        $this->endDateFormat   = trim($endDateFormat);
+        $this->startDateFormat = $this->endDateFormat;
 
-        return $this->startDate->format($startDateFormat) .
+        $this->consolidateDateFormats();
+
+        return $this->startDate->format($this->startDateFormat) .
                $this->separator .
-               $this->endDate->format($endDateFormat);
+               $this->endDate->format($this->endDateFormat);
     }
 
     /**
-     * Get the consolidated start date format.
+     * Consolidated the start and end date formats.
      *
-     * This is based on removing duplicated time parts between the start and end dates.
+     * This is based on removing duplicated time parts between the start and end dates, depending on the order of
+     * different sized time parts.
      *
      * @since 1.0.0
-     *
-     * @param string $endDateFormat End date format.
-     *
-     * @return string Start date format.
      */
-    protected function getStartDateFormat(string $endDateFormat): string
+    protected function consolidateDateFormats()
     {
-        $startDateFormat    = trim($endDateFormat);
-        $timePartCharacters = str_split($startDateFormat);
+        $timePartCharacters = DateFormat::getTimePartCharactersAsArray($this->startDateFormat);
 
-        $sortedTimePartCharacters = $this->sortTimePartCharacters($timePartCharacters);
-
-        foreach ($sortedTimePartCharacters as $timePartCharacter) {
-            if ($this->timePartValueInDatesIsInconsistent($timePartCharacter)) {
-                break;
-            }
-
-            $startDateFormat =  $this->removeTimePartCharacterFromFormat($timePartCharacter, $startDateFormat);
-        }
-
-        return trim(trim($startDateFormat, $this->removableDelimiters));
-    }
-
-    // @codingStandardsChangeSetting ObjectCalisthenics.Metrics.MaxNestingLevel maxNestingLevel 3
-    /**
-     * Sort timePartCharacters by the size of the time part.
-     *
-     * i.e. all the year characters first, then month characters etc.
-     *
-     * @param array $timePartCharacters
-     *
-     * @return array
-     */
-    protected function sortTimePartCharacters(array $timePartCharacters)
-    {
-        $sorted = [];
-
-        foreach (self::CHAR_SETS as $charset) {
-            foreach ($timePartCharacters as $timePartCharacter) {
-                if (in_array($timePartCharacter, $charset)) {
-                    $sorted[] = $timePartCharacter;
+        foreach ($timePartCharacters as $index => $timePartCharacter) {
+            if ($this->timePartValueInDatesIsConsistent($timePartCharacters, $timePartCharacter)) {
+                if (DateFormat::nextCharacterIsSmallerTimePart($timePartCharacters, $index)) {
+                    $this->endDateFormat = DateFormat::removeTimePartCharacterFromFormat(
+                        $timePartCharacter,
+                        $this->endDateFormat
+                    );
+                } else {
+                    $this->startDateFormat = DateFormat::removeTimePartCharacterFromFormat(
+                        $timePartCharacter,
+                        $this->startDateFormat
+                    );
                 }
             }
         }
 
-        return array_unique($sorted);
-    }
-    // @codingStandardsChangeSetting ObjectCalisthenics.Metrics.MaxNestingLevel maxNestingLevel 2
-
-    /**
-     * Remove a time part character and its aliases from a format.
-     *
-     * @param string $timePartCharacter Time part character.
-     * @param string $format            Date format.
-     *
-     * @return string
-     */
-    protected function removeTimePartCharacterFromFormat(string $timePartCharacter, string $format): string
-    {
-        $timePartAliases = $this->getTimePartAliases($timePartCharacter);
-
-        return $this->removeTimePartAliasesFromFormat($timePartAliases, $format);
-    }
-
-    /**
-     * @param array  $timePartAliases Characters that match the time part.
-     * @param string $format          Date format.
-     *
-     * @return string Updated date format.
-     */
-    protected function removeTimePartAliasesFromFormat(array $timePartAliases, string $format): string
-    {
-        return str_replace($timePartAliases, '', $format);
-    }
-
-    /**
-     * @param string $timePartCharacter Time part character from format.
-     *
-     * @return array
-     */
-    protected function getTimePartAliases(string $timePartCharacter): array
-    {
-        foreach (self::CHAR_SETS as $timePartAliases) {
-            if (in_array($timePartCharacter, $timePartAliases)) {
-                $return = $timePartAliases;
-            }
-        }
-
-        return $return;
+        $this->startDateFormat = trim(trim($this->startDateFormat, $this->removableDelimiters));
+        $this->endDateFormat   = trim(trim($this->endDateFormat, $this->removableDelimiters));
     }
 
     /**
@@ -265,17 +200,18 @@ class DateRange
     }
 
     /**
-     * Check if time part value in dates is inconsistent (i.e. Feb and Mar)
+     * Check if time part value in dates is consistent (i.e. Feb and Feb)
      *
      * @param string $timePartCharacter Time part character to check.
      *
      * @return bool
      */
-    protected function timePartValueInDatesIsInconsistent(string $timePartCharacter): bool
+    protected function timePartValueInDatesIsConsistent(array $timePartCharacters, string $timePartCharacter): bool
     {
-        return ! $this->formattedDatesMatch($timePartCharacter);
+        $format = implode(DateFormat::removeSmallerTimePartCharacters($timePartCharacters, $timePartCharacter));
+
+        return $this->formattedDatesMatch($format);
     }
 }
 
-// @codingStandardsChangeSetting ObjectCalisthenics.Metrics.MethodPerClassLimit maxCount 10
 // @codingStandardsChangeSetting ObjectCalisthenics.Files.ClassTraitAndInterfaceLength maxLength 200

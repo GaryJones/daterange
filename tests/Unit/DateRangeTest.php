@@ -59,6 +59,7 @@ class DateRangeTest extends TestCase
      *
      * @dataProvider dataStartEndDates
      * @throws Exception
+     * @group nomods
      */
     public function testDateRangeNoModifications(string $startDate, string $endDate, string $format, string $expected)
     {
@@ -108,18 +109,78 @@ class DateRangeTest extends TestCase
                 'd M Y',
                 '23 Jun 2018',
             ],
-            'Same date, different hour' => [
-                '23rd June 18 14:00',
-                '2018-06-23T15:00',
-                'H:i d M Y',
-                '14:00 – 15:00 23 Jun 2018',
+            'Year first, different month' => [
+                '2018-06',
+                '2018-07',
+                'Y M',
+                '2018 Jun – Jul',
             ],
-            'Different date and hour' => [
-                '2018-06-23T14:00',
-                'June 24 18 15:00',
-                'H:i dS M Y',
-                '14:00 23rd – 15:00 24th Jun 2018',
+            'Year first, then different day' => [
+                '2018-07-23',
+                '2018-07-25',
+                'Y d M',
+                '2018 23 – 25 Jul',
             ],
+            'Month first, same month' => [
+                '2018-06-25',
+                'June 28th 2018',
+                'M jS Y',
+                'Jun 25th – 28th 2018',
+            ],
+            'Month first, different month' => [
+                '2018-06-25',
+                'July 28th 2018',
+                'M j<\s\up>S</\s\up> Y',
+                'Jun 25<sup>th</sup> – Jul 28<sup>th</sup> 2018',
+            ],
+            'Space before suffix' => [
+                '2018-06-25',
+                'July 28th 2018',
+                'M j <\s\up>S</\s\up> Y',
+                'Jun 25 <sup>th</sup> – Jul 28 <sup>th</sup> 2018',
+            ],
+            'Escaped characters, single quotes' => [
+                '2018-06-25',
+                '2018-06-25',
+                'd\\\M\\\y',
+                '25\Jun\18',
+            ],
+            'Escaped characters, double quotes' => [
+                '2018-06-25',
+                '2018-06-25',
+                "d\\\M\\\y",
+                '25\Jun\18',
+            ],
+            // 'Same date of the month, but different month, unusual formatting' => [
+            //     '2018-02-06',
+            //     '7 Feb 2018',
+            //     'd~M\\\Y',
+            //     '06~ – 07~Feb\18',
+            // ],
+            // 'Duplicated formatting' => [
+            //     '2018-02-06',
+            //     'Feb 07 2018',
+            //     'YdMymdMYDm',
+            //     '0606Tue – 201807Feb180207Feb2018Wed02',
+            // ],
+            // 'Same date, different hour' => [
+            //     '23rd June 18 14:00',
+            //     '2018-06-23T15:00',
+            //     'H:i d M Y',
+            //     '14:00 – 15:00 23 Jun 2018',
+            // ],
+            // 'Different date and hour' => [
+            //     '2018-06-23T14:00',
+            //     'June 24 18 15:00',
+            //     'H:i dS M Y',
+            //     '14:00 23rd – 15:00 24th Jun 2018',
+            // ],
+            // 'Different seconds and ordinal suffix' => [
+            //     '2018-06-25 14:00:01',
+            //     '2018-06-25 14:00:02',
+            //     'H:i:s j<\s\up>S</\s\up>M Y',
+            //     '14:00:01 – 14:00:02 Jun 25<sup>th</sup> 2018',
+            // ],
         ];
     }
 
@@ -143,20 +204,7 @@ class DateRangeTest extends TestCase
     public function testDateRangeModifiedRemovableDelimiters()
     {
         $dateRange = new DateRange(new DateTimeImmutable('6th Feb 18'), new DateTimeImmutable('2018-02-07'));
-        $dateRange->changeRemovableDelimiters('~\\');
-        self::assertEquals('06 – 07~Feb\18', $dateRange->format('d~M\\\y'));
-    }
-
-    /**
-     * Test date range output with duplicated formatting characters.
-     *
-     * @group duplicate
-     * @throws Exception
-     */
-    public function testDateRangeDuplicatedFormattingCharacters()
-    {
-        $dateRange = new DateRange(new DateTimeImmutable('6th Feb 18'), new DateTimeImmutable('2018-02-07'));
-        $dateRange->changeRemovableDelimiters('~\\');
-        self::assertEquals('0606Tue – 201807Feb180207Feb2018Wed02', $dateRange->format('YdMymdMYDm'));
+        $dateRange->changeRemovableDelimiters('~\\ ');
+        self::assertEquals('06 – 07~Feb~\ 18', $dateRange->format('d~M~\\\ y'));
     }
 }
