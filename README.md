@@ -85,10 +85,18 @@ $dateRange->changeRemovableDelimiters('·');
 echo $dateRange->format('d·M·Y'); //  23 – 24·Jun·2018
 ```
 
+## Known Issues
+
+These are known issues which need addressing before this package can be considered stable:
+
+- [Escaped characters are not handled correctly](https://github.com/GaryJones/daterange/issues/2)
+- [Duplicate time parts are not handled correctly](https://github.com/GaryJones/daterange/issues/3)
+- [Hours, minutes and seconds are not handled correctly](https://github.com/GaryJones/daterange/issues/4)
+
 
 ## Contributing
 
-All feedback / bug reports / pull requests are welcome.
+All feedback, bug reports and pull requests are welcome.
 
 ## License
 
